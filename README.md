@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevPath
 
-## Getting Started
+Community-ranked roadmaps, an adaptive (Duolingo-style) coding practice engine, and developer communities.
+Built from the DevPath Figma prototype.
 
-First, run the development server:
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. Use the avatar menu → **Reset demo data** to start over.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's in it (and what it costs: $0)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Piece | How it works | Cost |
+| --- | --- | --- |
+| UI | Next.js 15 + Tailwind v4, tokens from the Figma file in `src/app/globals.css` | free |
+| Code execution | Python runs **in the learner's browser** via Pyodide (WebAssembly) in a Web Worker with a 6 s time limit (`public/pyodide-worker.js`). No Judge0 server needed. | free |
+| Editor | Monaco (the VS Code editor), loaded from a CDN | free |
+| Adaptive engine | Elo rating per skill (`src/lib/elo.ts`). Nodes point at a pool of problems; the next problem is the closest to your rating + 40. A fast first-try solve skips easier warm-ups. | free |
+| Ranking | Reddit "hot", Wilson lower bound for Top/Best, rising = votes/hour (`src/lib/ranking.ts`) | free |
+| Data | `localStorage` (`src/lib/store.tsx`), seeded from `src/lib/data.ts` and `src/lib/problems.ts` | free |
 
-## Learn More
+## Deploy for free
 
-To learn more about Next.js, take a look at the following resources:
+Push to GitHub, then import the repo on Vercel (Hobby plan). No environment variables are needed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Next steps (still free)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Accounts + shared data:** replace the actions in `src/lib/store.tsx` with Supabase (free tier: Postgres + GitHub OAuth).
+- **More problems:** add entries to `src/lib/problems.ts`. Each one is graded by calling one Python function against `tests`.
+- **More languages:** JavaScript can run in a Web Worker the same way Python does.

@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Design tokens from the DevPath Figma file */
+@theme {
+  --color-bg: #0e1016;
+  --color-surface: #161922;
+  --color-raised: #1f2330;
+  --color-line: #2a2f3d;
+  --color-fg: #e8eaf0;
+  --color-fg-2: #b8bdcb;
+  --color-fg-3: #d3d6df;
+  --color-muted: #8c92a3;
+  --color-faint: #4a5064;
+  --color-code: #0b0d12;
+  --color-ink: #0b1a12;
+  --color-ink-2: #0b0d12;
+  --color-brand: #3ddc84;
+  --color-brand-deep: #1f7a4a;
+  --color-orange: #ff7a45;
+  --color-yellow: #ffc845;
+  --color-blue: #5b8cff;
+  --color-red: #ff5c6c;
+  --color-purple: #a78bfa;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 3D "pressable" button from the design: solid bottom shadow that compresses on click */
+.btn-3d {
+  box-shadow: 0 4px 0 0 var(--btn-shadow);
+  transition: transform 80ms ease, box-shadow 80ms ease, filter 120ms ease;
+}
+.btn-3d:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.btn-3d:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 var(--btn-shadow);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }

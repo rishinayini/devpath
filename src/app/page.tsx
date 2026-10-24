@@ -1,103 +1,130 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { RoadmapCard } from "@/components/RoadmapCard";
+import { Sidebar } from "@/components/Sidebar";
+import { TopNav } from "@/components/TopNav";
+import { Button, cx, Pill } from "@/components/ui";
+import { DailyGoalCard, HotInCommunitiesCard, SkillRatingsCard, StreakCard } from "@/components/Widgets";
+import { ME, type RoadmapType } from "@/lib/data";
+import { hot, rising, ROADMAP_DECAY, wilson } from "@/lib/ranking";
+import { allRoadmaps, useStore, votesOf } from "@/lib/store";
+
+const SORTS = ["hot", "top", "new", "rising"] as const;
+type Sort = (typeof SORTS)[number];
+const TYPES: { key: RoadmapType | "all"; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "problems", label: "Coding Problems" },
+  { key: "concepts", label: "Concepts" },
+  { key: "videos", label: "Videos" },
+];
+
+function Home() {
+  const { state } = useStore();
+  const params = useSearchParams();
+  const router = useRouter();
+  const sort = (SORTS.includes(params.get("sort") as Sort) ? params.get("sort") : "hot") as Sort;
+  const type = (params.get("type") ?? "all") as RoadmapType | "all";
+  const mine = params.get("feed") === "mine";
+
+  const setParam = (k: string, v: string | null) => {
+    const p = new URLSearchParams(params);
+    if (v === null) p.delete(k);
+    else p.set(k, v);
+    router.replace(`/?${p.toString()}`, { scroll: false });
+  };
+
+  const now = Date.now();
+  const list = allRoadmaps(state)
+    .filter((r) => type === "all" || r.type === type)
+    .filter((r) => !mine || r.author === ME.handle || state.progress[r.slug] || state.saved.includes(`roadmap:${r.slug}`))
+    .map((r) => ({ r, v: votesOf(state, `roadmap:${r.slug}`, r.up, r.down) }))
+    .sort((a, b) => {
+      if (sort === "new") return b.r.createdAt - a.r.createdAt;
+      if (sort === "top") return wilson(b.v.up, b.v.down) - wilson(a.v.up, a.v.down);
+      if (sort === "rising") return rising(b.v.up, b.v.down, b.r.createdAt, now) - rising(a.v.up, a.v.down, a.r.createdAt, now);
+      return hot(b.v.up, b.v.down, b.r.createdAt, ROADMAP_DECAY) - hot(a.v.up, a.v.down, a.r.createdAt, ROADMAP_DECAY);
+    })
+    .map((x) => x.r);
+
+  const sidebarKey = mine ? "mine" : type !== "all" ? type : sort === "top" ? "popular" : "home";
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <>
+      <TopNav active="roadmaps" />
+      <div className="flex flex-col gap-8 px-4 pb-12 pt-7 sm:px-8 lg:flex-row">
+        <Sidebar active={sidebarKey} />
+        <main className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col gap-[2px]">
+              <h1 className="text-[28px] font-bold">{mine ? "My Roadmaps" : "Roadmaps"}</h1>
+              <p className="text-[14px] text-muted">
+                {mine ? "Roadmaps you’ve started, saved or created" : "Community-ranked learning paths for every corner of CS"}
+              </p>
+            </div>
+            <span className="flex-1" />
+            <Button href="/roadmaps/new">+ Create roadmap</Button>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1" role="tablist" aria-label="Sort roadmaps">
+              {SORTS.map((s) => (
+                <button
+                  key={s}
+                  role="tab"
+                  aria-selected={sort === s}
+                  onClick={() => setParam("sort", s === "hot" ? null : s)}
+                  className={cx(
+                    "rounded-[8px] px-3 py-[6px] text-[14px] capitalize transition",
+                    sort === s ? "bg-raised font-semibold text-fg" : "font-medium text-muted hover:text-fg",
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <span className="flex-1" />
+            {TYPES.map((t) => (
+              <Pill
+                key={t.key}
+                tone={type === t.key ? "green" : "neutral"}
+                onClick={() => setParam("type", t.key === "all" ? null : t.key)}
+              >
+                {t.label}
+              </Pill>
+            ))}
+          </div>
+
+          {list.map((r) => (
+            <RoadmapCard key={r.slug} rm={r} />
+          ))}
+          {list.length === 0 && (
+            <div className="rounded-[14px] border border-dashed border-line p-10 text-center text-[14px] text-muted">
+              Nothing here yet.{" "}
+              <Link href="/" className="text-brand hover:underline">
+                Browse all roadmaps
+              </Link>{" "}
+              or create your own.
+            </div>
+          )}
+        </main>
+        <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[300px]">
+          <StreakCard />
+          <DailyGoalCard />
+          <SkillRatingsCard />
+          <HotInCommunitiesCard />
+        </aside>
+      </div>
+    </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <Home />
+    </Suspense>
   );
 }
